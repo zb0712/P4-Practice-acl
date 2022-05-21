@@ -147,26 +147,24 @@ control MyIngress(inout headers hdr,
         default_action = drop();
     }
 
-    /* TODO: Create a table for access control list.
-       Hints: Use ipv4_lpm table as an example.
-       Hints: The table should have the following specification
-          key: hdr.ipv4.dstAddr (ternary), hdr.udp.dstPort (ternary)
-          actions: drop, NoAction
-          size: 1024
-          default action: NoAction
-       Hints: Do not forget to add two rules to s1-acl.json. One rule should
-          drop packets with UDP port 80, by specifying {"hdr.udp.dstPort":
-          [80, 65535]} as "match". The other rule should drop packets with
-          IPv4 address 10.0.1.4, by specifing {"hdr.ipv4.dstAddr": ["10.0.1.4",
-          4294967295]} as "match".
-       Notes: The priority field must be set to a non-zero value 
-              if the match key includes a ternary match.
-     */
+    table udp_tcp_check {
+        key = {
+            hdr.ipv4.dstAddr: ternary;
+            hdr.udp.dstPort: ternary;
+        }
+        actions = {
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction;
+    }
+    
 
     apply {
         if (hdr.ipv4.isValid()) {
             ipv4_lpm.apply();
-            /* TODO: add your table to the control flow */
+            udp_tcp_check.apply();
 
         }
 
